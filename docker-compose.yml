@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16
+    container_name: coffee_ai_db
+    restart: on-failure
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - cofee_ai_network
+    env_file:
+      - '.env'
+  web:
+    build: .
+    container_name: coffee_ai_web
+    restart: on-failure
+    command: >
+      bash -c "python manage.py migrate &&
+               gunicorn core.wsgi:application --bind 0.0.0.0:8013"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - ./media:/app/media
+    ports:
+      - "8013:8013"
+    depends_on:
+      db:
+        condition: service_healthy
+
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+    networks:
+      - cofee_ai_network
+    env_file:
+      - '.env'
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  cofee_ai_network:
