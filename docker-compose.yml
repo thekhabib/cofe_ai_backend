@@ -9,34 +9,33 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 5s
       timeout: 5s
       retries: 5
-
     networks:
       - cofee_ai_network
     env_file:
       - '.env'
+
   web:
     build: .
     container_name: coffee_ai_web
     restart: on-failure
     command: >
       bash -c "python manage.py migrate &&
-               gunicorn core.wsgi:application --bind 0.0.0.0:8013"
+               python manage.py collectstatic --noinput &&
+               gunicorn config.wsgi:application --bind 0.0.0.0:8013"
     volumes:
       - .:/app
-      - static_volume:/app/staticfiles
-      - ./media:/app/media
+      - /var/www/backend/cofe_ai_backend/staticfiles:/app/staticfiles
+      - /var/www/backend/cofe_ai_backend/media:/app/media
     ports:
       - "8013:8013"
     depends_on:
       db:
         condition: service_healthy
-
     environment:
       DB_HOST: ${DB_HOST}
       DB_NAME: ${DB_NAME}
@@ -53,7 +52,18 @@ services:
 volumes:
   postgres_data:
   static_volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/www/backend/cofe_ai_backend/staticfiles
+      o: bind
+
   media_volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/www/backend/cofe_ai_backend/media
+      o: bind
 
 networks:
   cofee_ai_network:

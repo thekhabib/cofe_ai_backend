@@ -24,8 +24,12 @@ COPY . /app/
 # Expose the port the app runs on
 EXPOSE 8013
 
+# Build args and env vars
+ARG ALLOWED_HOSTS
+ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
+
 # Collect static (optional if you use collectstatic)
 RUN python manage.py collectstatic --noinput
 
 # Default command (overridden in docker-compose)
-CMD gunicorn core.wsgi:application --bind 0.0.0.0:8013
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8013"]
