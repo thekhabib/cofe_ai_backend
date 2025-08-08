@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16
-    container_name: coffee_ai_db
+    container_name: coffee_ai_backend_db
     restart: on-failure
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -66,4 +66,6 @@ volumes:
       o: bind
 
 networks:
-  cofee_ai_network:
+  coffee_ai_network:
+    driver: bridge
+    external: true
